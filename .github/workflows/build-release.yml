@@ -1,4 +1,4 @@
-name: Build xray-core release
+name: Build xray-core
 on:
   workflow_dispatch:
 
@@ -14,22 +14,15 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.22
+        go-version: 1.24
         check-latest: true
 
-    - name: Get Latest Release
-      run: |
-        RELEASE_TITLE=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | jq -r '.name')
-        echo "release_title=$RELEASE_TITLE" >> $GITHUB_ENV
-        RELEASE_TAG=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | jq -r '.tag_name')
-        echo "release_tag=$RELEASE_TAG" >> $GITHUB_ENV
-        RELEASE_COMMITS=$(curl -s https://api.github.com/repos/XTLS/Xray-core/commits/$RELEASE_TAG | jq -r '.sha')
-        echo "release_commits=$RELEASE_COMMITS" >> $GITHUB_ENV
-        echo "https://github.com/XTLS/Xray-core/commit/$RELEASE_COMMITS"
+    - name: Checkout Xray-core Tag
+      run: echo "tag_name=v25.3.6" >> $GITHUB_ENV
 
     - name: Clone Xray-core Source
       run: |
-        git clone --branch ${{env.release_tag}} --depth 1 https://github.com/XTLS/Xray-core
+        git clone --branch ${{env.tag_name}} --depth 1 https://github.com/XTLS/Xray-core
         cd Xray-core
         go mod download
 
@@ -101,7 +94,7 @@ jobs:
       uses: andreaswilli/delete-release-assets-action@v3.0.0
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: latest
+        tag: ${{env.tag_name}}
         deleteOnlyFromDrafts: false
 
     - name: Create and Upload Release
@@ -109,11 +102,11 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        release_name: ${{env.release_title}}
-        tag: latest
+        release_name: Xray-core ${{env.tag_name}}
+        tag: ${{env.tag_name}}
         body: |
           Latest commit from the main branch:
-          https://github.com/XTLS/Xray-core/commit/${{env.release_commits}}
+          https://github.com/XTLS/Xray-core/tree/${{env.tag_name}}
         file_glob: true
         overwrite: true
         file: ./Xray-core/xray-*
